@@ -2,8 +2,8 @@ import { Forma } from "forma-embedded-view-sdk/auto";
 import { CameraState } from "forma-embedded-view-sdk/camera";
 import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
-import * as geoData from "./ITU_data.json" assert { type: "json" };
 import { Project } from "forma-embedded-view-sdk/project";
+import { GoogleMaps } from "./GoogleMaps";
 
 function translateToUtm(
   geoJson: GeoJSON.FeatureCollection,
@@ -33,7 +33,6 @@ export default function App() {
 
   useEffect(() => {
     if (!project) return;
-    const;
   }, [project]);
 
   useEffect(() => {
@@ -46,6 +45,7 @@ export default function App() {
 
   return (
     <div>
+      <GoogleMaps />
       <h2>current Camera position</h2>
       <div>
         <pre>{JSON.stringify(currentCamera, null, 2)}</pre>
