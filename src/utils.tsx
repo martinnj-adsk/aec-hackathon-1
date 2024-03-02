@@ -1,25 +1,28 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
 
-enum AgeRange {
-  YOUTH = "18-24",
-  YOUNG_ADULT = "25-34",
-}
-
-type Age = "18-24" | "25-34" | "35-44" | "45-54" | "55-64" | "65+" | "N/A";
-
 export type ITUData = {
   location: string;
   date: Date;
   domestic: boolean;
   catchment: string;
-  ageRange: Age;
-  visitorType: string;
+  ageRange: "18-24" | "25-34" | "35-44" | "45-54" | "55-64" | "65+" | "N/A";
+  gender: "M" | "F" | "N" | "none";
+  visitorType:
+    | "Commuter"
+    | "in-transit"
+    | "One day visitor"
+    | "Overnight visitor"
+    | "Potential event visitor"
+    | "Resident"
+    | "Short term visitor";
   visitorCount: number;
 };
 
 export async function getCSV(): Promise<ITUData[]> {
   const response = await fetch(new URL("/ITU_data.csv", import.meta.url).href);
   const data = await response.text();
+  if (!data) throw new Error("No data");
+
   const lines = data.split("\n");
   return lines.slice(1, lines.length - 1).map((line) => {
     const splitLine = line.split(",");
@@ -30,9 +33,9 @@ export async function getCSV(): Promise<ITUData[]> {
       ),
       domestic: splitLine[5].toLowerCase() === "true",
       catchment: splitLine[6],
-      ageRange: splitLine[7] as Age,
+      ageRange: splitLine[7] as ITUData["ageRange"],
       visitorType: splitLine[8],
-      gender: splitLine[9],
+      gender: splitLine[9] as ITUData["gender"],
       visitorCount: parseInt(splitLine[10]),
     };
   });

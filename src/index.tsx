@@ -1,12 +1,11 @@
 import { Forma } from "forma-embedded-view-sdk/auto";
-import { CameraState } from "forma-embedded-view-sdk/camera";
 import { render } from "preact";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { Project } from "forma-embedded-view-sdk/project";
-import { GoogleMaps } from "./GoogleMaps";
+import { Filters } from "./Filters";
 import geojsonRaw from "./ITU_data.json";
 import proj4 from "proj4";
-import { ITUData, getCSV, useFilteredData } from "./utils";
+import { ITUData, useFilteredData } from "./utils";
 
 function translateGeojsonPolygons(
   geoJson: GeoJSON.FeatureCollection<GeoJSON.Polygon>,
@@ -35,8 +34,15 @@ function translateGeojsonPolygons(
 
 export default function App() {
   const [project, setProject] = useState<Project>();
-  const data = useFilteredData((d) => d.ageRange === "18-24");
-  console.log(data.length);
+  const [filterFunction, setFilterFunction] = useState<(d: ITUData) => boolean>(
+    () => () => true
+  );
+  const data = useFilteredData(filterFunction);
+
+  useEffect(() => {
+    console.log("Data changed!", data?.length, "lines of data");
+  }, [data]);
+
   useEffect(() => {
     Forma.project.get().then(setProject).catch(console.error);
   }, []);
@@ -52,9 +58,8 @@ export default function App() {
   }, [project]);
 
   return (
-    <div>
-      <GoogleMaps />
-      <h2>current Camera position</h2>
+    <div style={{ height: "100%" }}>
+      <Filters setFilterFunction={setFilterFunction} />
     </div>
   );
 }
