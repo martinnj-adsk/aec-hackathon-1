@@ -6,6 +6,7 @@ import { Project } from "forma-embedded-view-sdk/project";
 import { GoogleMaps } from "./GoogleMaps";
 import geojsonRaw from "./ITU_data.json";
 import proj4 from "proj4";
+import { ITUData, getCSV, useFilteredData } from "./utils";
 
 function translateGeojsonPolygons(
   geoJson: GeoJSON.FeatureCollection<GeoJSON.Polygon>,
@@ -34,25 +35,11 @@ function translateGeojsonPolygons(
 
 export default function App() {
   const [project, setProject] = useState<Project>();
-
+  const data = useFilteredData((d) => d.ageRange === "18-24");
+  console.log(data.length);
   useEffect(() => {
     Forma.project.get().then(setProject).catch(console.error);
   }, []);
-
-  const [currentCamera, setCurrentCamera] = useState<CameraState>();
-  const [initialCamera, setInitialCamera] = useState<CameraState>();
-
-  useEffect(() => {
-    if (!project) return;
-  }, [project]);
-
-  useEffect(() => {
-    Forma.camera.getCurrent().then(async (res) => {
-      setCurrentCamera(res);
-      setInitialCamera(res);
-    });
-    Forma.camera.subscribe(setCurrentCamera);
-  }, [setCurrentCamera, setInitialCamera]);
 
   useEffect(() => {
     if (!project) return;
@@ -68,20 +55,6 @@ export default function App() {
     <div>
       <GoogleMaps />
       <h2>current Camera position</h2>
-      <div>
-        <pre>{JSON.stringify(currentCamera, null, 2)}</pre>
-      </div>
-      <div>
-        <h2>initial Camera position</h2>
-        <pre>{JSON.stringify(initialCamera, null, 2)}</pre>
-      </div>
-      <button
-        onClick={() =>
-          Forma.camera.move({ ...initialCamera, transitionTimeMs: 1000 })
-        }
-      >
-        Reset to original position
-      </button>
     </div>
   );
 }
