@@ -43,10 +43,14 @@ export function useData() {
   useEffect(() => {
     const mapper = (splitLine: string[]): ITUData => {
       const peopleDistribution = splitLine.slice(11);
+      const date = new Date();
+      const HOUR = parseInt(splitLine[4]);
       const obj: ITUData = {
         location: splitLine[0],
         date: new Date(
-          `${splitLine[1]}-${splitLine[2]}-${splitLine[3]}T${splitLine[4]}:00:00`
+          `${splitLine[1]}-${splitLine[2]}-${splitLine[3]}T${
+            HOUR < 10 ? "0" + HOUR : HOUR
+          }:00:00`
         ),
         domestic: splitLine[5]?.toLowerCase() === "true",
         catchment: splitLine[6],

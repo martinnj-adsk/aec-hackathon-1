@@ -59,6 +59,53 @@ export default function App() {
     console.log("Data changed!", data?.length, "lines of data");
   }, [data]);
 
+  useEffect(() => {
+    console.log("Income data changed!", incomeData);
+    console.log("education data changed!", educationData);
+  }, [data]);
+
+  const [play, setPlay] = useState(false);
+  const [dateRange, setDateRange] = useState<[Date, Date]>();
+  const [timeAwareData, settimeAwareData] = useState(data);
+  useEffect(() => {
+    console.log("play", play);
+    if (!play) {
+      setDateRange(undefined);
+      return;
+    }
+    let HOUR = 0;
+    const interval = setInterval(() => {
+      HOUR = (HOUR + 1) % 24;
+      const NEXTHOUR = HOUR + 1;
+      const dateFrom = new Date(
+        `2023-11-10T${HOUR < 10 ? "0" + HOUR : HOUR}:00:00`
+      );
+      const dateTo = new Date(
+        `2023-11-10T${NEXTHOUR < 10 ? "0" + NEXTHOUR : NEXTHOUR}:00:00`
+      );
+      console.log("new date!");
+      setDateRange([dateFrom, dateTo]);
+      Forma.sun.setDate({ date: dateFrom });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [play]);
+
+  useEffect(() => {
+    console.log(dateRange);
+    if (dateRange) {
+      const [dateFrom, dateTo] = dateRange;
+      settimeAwareData(
+        data.filter((d) => dateFrom <= d.date && d.date <= dateTo)
+      );
+    } else {
+      settimeAwareData(data);
+    }
+  }, [data, dateRange]);
+
+  useEffect(() => {
+    console.log("data", timeAwareData.length);
+  }, [timeAwareData]);
+
   const [zone, setZone] = useState<string>();
 
   useEffect(() => {
@@ -67,9 +114,9 @@ export default function App() {
 
   useEffect(() => {
     if (!project) return;
-    if (data.length === 0) return;
+    if (timeAwareData.length === 0) return;
 
-    const { zoneUsage, max, min } = parseZoneUsage(data);
+    const { zoneUsage, max, min } = parseZoneUsage(timeAwareData);
     const colorMap = new Map<number, string>();
     for (const [zoneId, count] of zoneUsage.entries()) {
       const color = heatMapColorforValue((count - min) / (max - min));
@@ -90,11 +137,14 @@ export default function App() {
     return () => {
       Forma.render.geojson.cleanup();
     };
-  }, [data]);
+  }, [timeAwareData]);
 
   return (
     <div style={{ height: "100%" }}>
       <h2>Human behavioral assessment tool</h2>
+      <button onClick={() => setPlay(!play)}>
+        {play ? "Stop" : "Start"} simulation{" "}
+      </button>
       <Filters filter={filter} setFilter={setFilter} />
       <h3>Income</h3>
       <section style={Table3Column}>
