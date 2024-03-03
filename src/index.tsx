@@ -3,26 +3,11 @@ import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Project } from "forma-embedded-view-sdk/project";
 import { Divide, Filter, Filters } from "./Filters";
-import geojsonRaw from "./ITU_data.json";
 import zonesRaw from "./zones.json";
 import { ITUData, translateGeojsonPolygons, useFilteredData } from "./utils";
 
-const bluecolorScale10Item = [
-  "#f7fbff",
-  "#deebf7",
-  "#c6dbef",
-  "#9ecae1",
-  "#6baed6",
-  "#4292c6",
-  "#2171b5",
-  "#08519c",
-  "#08306b",
-  "#08306b",
-];
-
 function parseZoneUsage(data: ITUData[]) {
   const zoneUsage = new Map<number, number>();
-  console.log(data?.length);
   let distCount = 0;
   data.forEach((d) => {
     if (d.distribution) {
@@ -35,14 +20,9 @@ function parseZoneUsage(data: ITUData[]) {
     }
   });
 
-  console.log("total distribution count", distCount);
   const min = Math.min(...zoneUsage.values());
-  console.log("min", min);
   const max = Math.max(...zoneUsage.values());
-  console.log("max", max);
-  console.log("zoneUsage", zoneUsage);
   const sum = Array.from(zoneUsage.values()).reduce((a, b) => a + b, 0);
-  console.log("zoneUsage", zoneUsage);
   return { zoneUsage, min, max, sum };
 }
 
@@ -60,8 +40,9 @@ const Table2Column = {
 };
 
 function heatMapColorforValue(value: number) {
-  var h = (1.0 - value) * 240;
-  return "hsl(" + h + ", 100%, 50%)";
+  const h = Math.floor((1.0 - value) * 240);
+
+  return `hsl(${h},100%,50%)`;
 }
 
 export default function App() {
@@ -78,11 +59,6 @@ export default function App() {
     console.log("Data changed!", data?.length, "lines of data");
   }, [data]);
 
-  useEffect(() => {
-    console.log("Income data changed!", incomeData);
-    console.log("education data changed!", educationData);
-  }, [data]);
-
   const [zone, setZone] = useState<string>();
 
   useEffect(() => {
@@ -93,10 +69,10 @@ export default function App() {
     if (!project) return;
     if (data.length === 0) return;
 
-    const { zoneUsage, sum } = parseZoneUsage(data);
+    const { zoneUsage, max, min } = parseZoneUsage(data);
     const colorMap = new Map<number, string>();
     for (const [zoneId, count] of zoneUsage.entries()) {
-      const color = heatMapColorforValue(count / sum);
+      const color = heatMapColorforValue((count - min) / (max - min));
       colorMap.set(zoneId, color);
     }
     const newGeoJson = translateGeojsonPolygons(
@@ -104,18 +80,16 @@ export default function App() {
       project,
       colorMap
     );
-    if (!zone) {
-      Forma.render.geojson.add({ geojson: newGeoJson }).then((res) => {
-        setZone(res.id);
-        console.log("zones added");
-      });
-    } else {
-      console.log("zones updated");
-      Forma.render.geojson.update({
-        id: zone,
-        geojson: newGeoJson,
-      });
-    }
+
+    Forma.render.geojson.add({ geojson: newGeoJson });
+    Forma.render.geojson.add({ geojson: newGeoJson });
+    Forma.render.geojson.add({ geojson: newGeoJson });
+    Forma.render.geojson.add({ geojson: newGeoJson });
+    Forma.render.geojson.add({ geojson: newGeoJson });
+
+    return () => {
+      Forma.render.geojson.cleanup();
+    };
   }, [data]);
 
   return (

@@ -133,7 +133,6 @@ export function useFilteredData(filter: Filter) {
 
   const ITU_Data = useMemo(() => {
     if (!data || data?.length === 0) return [];
-    console.log("all data", data?.length);
     return data.filter((d: ITUData) => {
       const genderFilter = !filter.gender || filter.gender === d.gender;
       const visitorTypeFilter =
@@ -204,7 +203,7 @@ export function translateGeojsonPolygons(
         ...feature,
         properties: {
           ...feature.properties,
-          stroke: color,
+          stroke: "#000000",
           fill: color,
         },
         geometry: {
