@@ -116,7 +116,7 @@ export default function App() {
     if (!project) return;
     if (timeAwareData.length === 0) return;
 
-    const { zoneUsage, max, min } = parseZoneUsage(timeAwareData);
+    const { zoneUsage, max, min, sum } = parseZoneUsage(timeAwareData);
     const colorMap = new Map<number, string>();
     for (const [zoneId, count] of zoneUsage.entries()) {
       const color = heatMapColorforValue((count - min) / (max - min));
@@ -128,9 +128,6 @@ export default function App() {
       colorMap
     );
 
-    Forma.render.geojson.add({ geojson: newGeoJson });
-    Forma.render.geojson.add({ geojson: newGeoJson });
-    Forma.render.geojson.add({ geojson: newGeoJson });
     Forma.render.geojson.add({ geojson: newGeoJson });
     Forma.render.geojson.add({ geojson: newGeoJson });
 
