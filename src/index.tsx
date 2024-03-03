@@ -2,7 +2,7 @@ import { Forma } from "forma-embedded-view-sdk/auto";
 import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Project } from "forma-embedded-view-sdk/project";
-import { Filter, Filters } from "./Filters";
+import { Divide, Filter, Filters } from "./Filters";
 import geojsonRaw from "./ITU_data.json";
 import zonesRaw from "./zones.json";
 import { ITUData, translateGeojsonPolygons, useFilteredData } from "./utils";
@@ -40,6 +40,13 @@ function parseZoneUsage(data: ITUData[]) {
   return { zoneUsage, min, max };
 }
 
+const Table = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, 1fr)",
+  alignItems: "center",
+  width: "100%",
+};
+
 export default function App() {
   const [filter, setFilter] = useState<Filter>({
     ageFrom: 0,
@@ -53,6 +60,7 @@ export default function App() {
   useEffect(() => {
     console.log("Data changed!", data?.length, "lines of data");
   }, [data]);
+
   useEffect(() => {
     console.log("Income data changed!", incomeData);
     console.log("education data changed!", educationData);
@@ -109,6 +117,48 @@ export default function App() {
   return (
     <div style={{ height: "100%" }}>
       <Filters filter={filter} setFilter={setFilter} />
+      <h3>Income</h3>
+      <section style={Table}>
+        <p>
+          <b>Age Interval</b>
+        </p>
+        <p>
+          <b>Average Income</b>
+        </p>
+        <p>
+          <b>#People</b>
+        </p>
+        {incomeData?.map((d) => {
+          return (
+            <>
+              <p>{d.ageRange}</p>
+              <p>{d.averageIncome}</p>
+              <p>{d.count}</p>
+            </>
+          );
+        })}
+      </section>
+      <h3>Education</h3>
+      <section style={Table}>
+        <p>
+          <b>Age Interval</b>
+        </p>
+        <p>
+          <b>Highest Education</b>
+        </p>
+        <p>
+          <b>#People</b>
+        </p>
+        {educationData?.map((d) => {
+          return (
+            <>
+              <p>{d.ageRange}</p>
+              <p>{d.highestEducation}</p>
+              <p>{d.count}</p>
+            </>
+          );
+        })}
+      </section>
     </div>
   );
 }

@@ -7,7 +7,7 @@ namespace preactJSX {
   }
 }
 
-const Section = {
+export const Divide = {
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -54,7 +54,7 @@ export function Filters({
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <h3>Filter</h3>
-      <section style={Section}>
+      <section style={Divide}>
         <p>Age</p>
         from:{" "}
         <input
@@ -75,7 +75,7 @@ export function Filters({
           }
         />
       </section>
-      <section style={Section}>
+      <section style={Divide}>
         <p>Gender</p>
         <weave-select
           value={filter.gender || null}
@@ -90,7 +90,7 @@ export function Filters({
           ))}
         </weave-select>
       </section>
-      <section style={Section}>
+      <section style={Divide}>
         <p>Type</p>
         <weave-select
           value={filter.visitorType || null}
