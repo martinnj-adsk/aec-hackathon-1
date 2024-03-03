@@ -1,6 +1,7 @@
 import { Project } from "forma-embedded-view-sdk/project";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import proj4 from "proj4";
+import { Filter, determineAge } from "./Filters";
 
 export type ITUData = {
   location: string;
@@ -21,44 +22,115 @@ export type ITUData = {
   zoneId: number;
 };
 
-export async function getCSV(): Promise<ITUData[]> {
-  const response = await fetch(new URL("/ITU_data.csv", import.meta.url).href);
+export async function getCSV<T>(
+  url: string,
+  mapper: (splitLine: string[]) => T
+): Promise<T[]> {
+  const response = await fetch(new URL(url, import.meta.url).href);
   const data = await response.text();
   if (!data) throw new Error("No data");
 
-  const lines = data.split("\n");
+  const delimiter = data.includes("\r\n") ? "\r\n" : "\n";
+  const lines = data.split(delimiter);
   return lines.slice(1, lines.length - 1).map((line) => {
     const splitLine = line.split(",");
-    return {
-      location: splitLine[0],
-      date: new Date(
-        `${splitLine[1]}-${splitLine[2]}-${splitLine[3]}T${splitLine[4]}:00:00`
-      ),
-      domestic: splitLine[5]?.toLowerCase() === "true",
-      catchment: splitLine[6],
-      ageRange: splitLine[7] as ITUData["ageRange"],
-      visitorType: splitLine[8] as ITUData["visitorType"],
-      gender: splitLine[9] as ITUData["gender"],
-      visitorCount: parseInt(splitLine[10]),
-      zoneId: parseInt(splitLine[11]),
-    };
+    return mapper(splitLine);
   });
 }
 
 export function useData() {
   const [data, setData] = useState<ITUData[]>();
   useEffect(() => {
-    getCSV().then(setData).catch(console.error);
+    const mapper = (splitLine: string[]): ITUData => {
+      return {
+        location: splitLine[0],
+        date: new Date(
+          `${splitLine[1]}-${splitLine[2]}-${splitLine[3]}T${splitLine[4]}:00:00`
+        ),
+        domestic: splitLine[5]?.toLowerCase() === "true",
+        catchment: splitLine[6],
+        ageRange: splitLine[7] as ITUData["ageRange"],
+        visitorType: splitLine[8] as ITUData["visitorType"],
+        gender: splitLine[9] as ITUData["gender"],
+        visitorCount: parseInt(splitLine[10]),
+        zoneId: parseInt(splitLine[11]),
+      };
+    };
+    getCSV("/ITU_data.csv", mapper).then(setData).catch(console.error);
   }, []);
   return data;
 }
 
-export function useFilteredData(filter: (data: ITUData) => boolean) {
+type EducationStats = {
+  location: string;
+  year: number;
+  highestEducation: string;
+  ageRange: ITUData["ageRange"];
+  count: number;
+};
+
+export function useEducationData() {
+  const [data, setData] = useState<EducationStats[]>();
+  useEffect(() => {
+    const mapper = (splitLine: string[]): EducationStats => {
+      return {
+        location: splitLine[1],
+        year: parseInt(splitLine[2]),
+        highestEducation: splitLine[3],
+        ageRange: splitLine[4] as ITUData["ageRange"],
+        count: parseInt(splitLine[5]),
+      };
+    };
+    getCSV("/education.csv", mapper).then(setData).catch(console.error);
+  }, []);
+  return data;
+}
+type IncomeStats = {
+  location: string;
+  year: number;
+  averageIncome: number;
+  ageRange: ITUData["ageRange"];
+  count: number;
+};
+
+export function useIncomeData() {
+  const [data, setData] = useState<IncomeStats[]>();
+  useEffect(() => {
+    const mapper = (splitLine: string[]): IncomeStats => {
+      return {
+        year: parseInt(splitLine[0]),
+        location: splitLine[2],
+        ageRange: splitLine[3] as ITUData["ageRange"],
+        count: parseInt(splitLine[4]),
+        averageIncome: parseInt(splitLine[5]),
+      };
+    };
+    getCSV("/income.csv", mapper).then(setData).catch(console.error);
+  }, []);
+  return data;
+}
+
+export function useFilteredData(filter: Filter) {
   const data = useData();
-  return useMemo(() => {
+  const incomeData = useIncomeData();
+  const educationData = useEducationData();
+
+  const ITU_Data = useMemo(() => {
     if (!data) return [];
-    return data.filter(filter);
+    return data.filter((d: ITUData) => {
+      const genderFilter = !filter.gender || filter.gender === d.gender;
+      const visitorTypeFilter =
+        !filter.visitorType || filter.visitorType === d.visitorType;
+      const ageFilter = determineAge(d.ageRange, filter.ageFrom, filter.ageTo);
+      return genderFilter && visitorTypeFilter && ageFilter;
+    });
   }, [data, filter]);
+
+  return {
+    ITU_Data,
+    incomeData,
+    educationData,
+  };
 }
 
 export function translateGeojsonPolygons(

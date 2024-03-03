@@ -2,7 +2,7 @@ import { Forma } from "forma-embedded-view-sdk/auto";
 import { render } from "preact";
 import { useEffect, useState } from "preact/hooks";
 import { Project } from "forma-embedded-view-sdk/project";
-import { Filters } from "./Filters";
+import { Filter, Filters } from "./Filters";
 import geojsonRaw from "./ITU_data.json";
 import zonesRaw from "./zones.json";
 import { ITUData, translateGeojsonPolygons, useFilteredData } from "./utils";
@@ -41,14 +41,21 @@ function parseZoneUsage(data: ITUData[]) {
 }
 
 export default function App() {
+  const [filter, setFilter] = useState<Filter>({
+    ageFrom: 0,
+    ageTo: 110,
+    gender: null,
+    visitorType: null,
+  });
   const [project, setProject] = useState<Project>();
-  const [filterFunction, setFilterFunction] = useState<(d: ITUData) => boolean>(
-    () => () => true
-  );
-  const data = useFilteredData(filterFunction);
+  const { incomeData, educationData, ITU_Data: data } = useFilteredData(filter);
 
   useEffect(() => {
     console.log("Data changed!", data?.length, "lines of data");
+  }, [data]);
+  useEffect(() => {
+    console.log("Income data changed!", incomeData);
+    console.log("education data changed!", educationData);
   }, [data]);
 
   const [zone, setZone] = useState<string>();
@@ -101,7 +108,7 @@ export default function App() {
 
   return (
     <div style={{ height: "100%" }}>
-      <Filters setFilterFunction={setFilterFunction} />
+      <Filters filter={filter} setFilter={setFilter} />
     </div>
   );
 }

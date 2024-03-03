@@ -7,11 +7,6 @@ namespace preactJSX {
   }
 }
 
-export type Filter = {
-  options: {};
-  func: (d: ITUData) => boolean;
-};
-
 const Section = {
   display: "flex",
   justifyContent: "space-between",
@@ -19,7 +14,11 @@ const Section = {
   width: "100%",
 };
 
-function determineAge(age: ITUData["ageRange"], from: number, to: number) {
+export function determineAge(
+  age: ITUData["ageRange"],
+  from: number,
+  to: number
+) {
   if (age === "N/A") return false;
   if (age === "65+" || (age as any) === "65") return from <= 65 && 65 <= to;
   const [ageFrom, ageTo] = age.split("-").map((n) => parseInt(n));
@@ -38,35 +37,20 @@ const visitorTypes: ITUData["visitorType"][] = [
   "Short term visitor",
 ];
 
+export type Filter = {
+  ageFrom?: number;
+  ageTo?: number;
+  gender?: ITUData["gender"];
+  visitorType?: ITUData["visitorType"];
+};
+
 export function Filters({
-  setFilterFunction,
+  filter,
+  setFilter,
 }: {
-  setFilterFunction: (f: (d: ITUData) => boolean) => void;
+  filter: Filter;
+  setFilter: (filter: Filter) => void;
 }) {
-  const [filter, setFilter] = useState<{
-    ageFrom?: number;
-    ageTo?: number;
-    gender?: ITUData["gender"];
-    visitorType?: ITUData["visitorType"];
-  }>({
-    ageFrom: 0,
-    ageTo: 110,
-    gender: null,
-    visitorType: null,
-  });
-
-  useEffect(() => {
-    console.log(filter);
-    const fn = (d: ITUData) => {
-      const genderFilter = !filter.gender || filter.gender === d.gender;
-      const visitorTypeFilter =
-        !filter.visitorType || filter.visitorType === d.visitorType;
-      const ageFilter = determineAge(d.ageRange, filter.ageFrom, filter.ageTo);
-      return genderFilter && visitorTypeFilter && ageFilter;
-    };
-    setFilterFunction(() => fn);
-  }, [filter, setFilterFunction]);
-
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <h3>Filter</h3>
