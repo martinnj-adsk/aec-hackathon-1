@@ -61,7 +61,8 @@ export function Filters({
       const genderFilter = !filter.gender || filter.gender === d.gender;
       const visitorTypeFilter =
         !filter.visitorType || filter.visitorType === d.visitorType;
-      return genderFilter && visitorTypeFilter;
+      const ageFilter = determineAge(d.ageRange, filter.ageFrom, filter.ageTo);
+      return genderFilter && visitorTypeFilter && ageFilter;
     };
     setFilterFunction(() => fn);
   }, [filter, setFilterFunction]);
