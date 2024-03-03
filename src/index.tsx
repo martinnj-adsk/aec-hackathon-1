@@ -40,9 +40,15 @@ function parseZoneUsage(data: ITUData[]) {
   return { zoneUsage, min, max };
 }
 
-const Table = {
+const Table3Column = {
   display: "grid",
-  gridTemplateColumns: "repeat(3, 1fr)",
+  gridTemplateColumns: "1fr 1fr auto",
+  alignItems: "center",
+  width: "100%",
+};
+const Table2Column = {
+  display: "grid",
+  gridTemplateColumns: "1fr auto",
   alignItems: "center",
   width: "100%",
 };
@@ -116,9 +122,10 @@ export default function App() {
 
   return (
     <div style={{ height: "100%" }}>
+      <h2>Human behavioral assessment tool</h2>
       <Filters filter={filter} setFilter={setFilter} />
       <h3>Income</h3>
-      <section style={Table}>
+      <section style={Table3Column}>
         <p>
           <b>Age Interval</b>
         </p>
@@ -139,22 +146,18 @@ export default function App() {
         })}
       </section>
       <h3>Education</h3>
-      <section style={Table}>
-        <p>
-          <b>Age Interval</b>
-        </p>
+      <section style={Table2Column}>
         <p>
           <b>Highest Education</b>
         </p>
         <p>
           <b>#People</b>
         </p>
-        {educationData?.map((d) => {
+        {Object.entries(educationData)?.map(([education, count]) => {
           return (
             <>
-              <p>{d.ageRange}</p>
-              <p>{d.highestEducation}</p>
-              <p>{d.count}</p>
+              <p>{education}</p>
+              <p>{count}</p>
             </>
           );
         })}

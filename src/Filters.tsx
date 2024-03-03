@@ -53,7 +53,6 @@ export function Filters({
 }) {
   return (
     <div style={{ width: "100%", height: "100%" }}>
-      <h3>Filter</h3>
       <section style={Divide}>
         <p>Age</p>
         from:{" "}

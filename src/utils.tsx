@@ -126,10 +126,39 @@ export function useFilteredData(filter: Filter) {
     });
   }, [data, filter]);
 
+  const filteredIncomeData = useMemo(() => {
+    if (!incomeData) return [];
+    return incomeData.filter((d: IncomeStats) => {
+      const ageFilter = determineAge(d.ageRange, filter.ageFrom, filter.ageTo);
+      return ageFilter;
+    });
+  }, [incomeData, filter]);
+
+  const filteredEducationData: Record<string, number> = useMemo(() => {
+    if (!educationData) return {};
+    return educationData
+      .filter((d: EducationStats) => {
+        const ageFilter = determineAge(
+          d.ageRange,
+          filter.ageFrom,
+          filter.ageTo
+        );
+        return ageFilter;
+      })
+      .reduce((acc, curr) => {
+        if (acc[curr.highestEducation]) {
+          acc[curr.highestEducation] += curr.count;
+        } else {
+          acc[curr.highestEducation] = curr.count;
+        }
+        return acc;
+      }, {} as Record<string, number>);
+  }, [educationData, filter]);
+
   return {
     ITU_Data,
-    incomeData,
-    educationData,
+    incomeData: filteredIncomeData,
+    educationData: filteredEducationData,
   };
 }
 
