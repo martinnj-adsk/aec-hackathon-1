@@ -21,9 +21,9 @@ const Section = {
 
 function determineAge(age: ITUData["ageRange"], from: number, to: number) {
   if (age === "N/A") return false;
-  if (age === "65+" || (age as any) === "65") return from <= 65 && to <= 65;
+  if (age === "65+" || (age as any) === "65") return from <= 65 && 65 <= to;
   const [ageFrom, ageTo] = age.split("-").map((n) => parseInt(n));
-  return ageFrom >= from && ageTo <= to;
+  return from <= ageFrom && ageTo <= to;
 }
 
 const genders: ITUData["gender"][] = ["M", "F", "N", "none"];
