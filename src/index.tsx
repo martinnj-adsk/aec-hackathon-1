@@ -4,32 +4,40 @@ import { useEffect, useState } from "preact/hooks";
 import { Project } from "forma-embedded-view-sdk/project";
 import { Filters } from "./Filters";
 import geojsonRaw from "./ITU_data.json";
-import proj4 from "proj4";
-import { ITUData, useFilteredData } from "./utils";
+import zonesRaw from "./zones.json";
+import { ITUData, translateGeojsonPolygons, useFilteredData } from "./utils";
 
-function translateGeojsonPolygons(
-  geoJson: GeoJSON.FeatureCollection<GeoJSON.Polygon>,
-  project: Project
-): GeoJSON.FeatureCollection<GeoJSON.Polygon> {
-  const wgs84 = "+proj=longlat +datum=WGS84 +no_defs +type=crs";
-  const projectedFeatures = geoJson.features.map((feature: GeoJSON.Feature) => {
-    if (feature.geometry.type === "Polygon") {
-      return {
-        ...feature,
-        geometry: {
-          ...feature.geometry,
-          coordinates: feature.geometry.coordinates.map((c) =>
-            c.map(([x, y]) => {
-              const [xx, yy] = proj4(wgs84, project.projString, [x, y]);
-              return [xx - project.refPoint[0], yy - project.refPoint[1]];
-            })
-          ),
-        },
-      };
-    }
-    throw new Error("Only Polygon features are supported"); // TODO: handle other types
+const bluecolorScale10Item = [
+  "#f7fbff",
+  "#deebf7",
+  "#c6dbef",
+  "#9ecae1",
+  "#6baed6",
+  "#4292c6",
+  "#2171b5",
+  "#08519c",
+  "#08306b",
+  "#08306b",
+];
+
+function parseZoneUsage(data: ITUData[]) {
+  const zoneUsage = new Map<number, number>();
+  data.forEach((d) => {
+    const count = zoneUsage.get(d.zoneId) ?? 0;
+    zoneUsage.set(d.zoneId, count + d.visitorCount);
   });
-  return { ...geoJson, features: projectedFeatures };
+
+  const min = Math.min(...zoneUsage.values());
+  console.log("min", min);
+  const max = Math.max(...zoneUsage.values());
+  console.log("max", max);
+  console.log("zoneUsage", zoneUsage);
+  // const sum = Array.from(zoneUsage.values()).reduce((a, b) => a + b, 0);
+  // for (const [zoneId, count] of zoneUsage.entries()) {
+  //   zoneUsage.set(zoneId, Math.log(count));
+  // }
+  console.log("zoneUsage", zoneUsage);
+  return { zoneUsage, min, max };
 }
 
 export default function App() {
@@ -43,6 +51,8 @@ export default function App() {
     console.log("Data changed!", data?.length, "lines of data");
   }, [data]);
 
+  const [zone, setZone] = useState<string>();
+
   useEffect(() => {
     Forma.project.get().then(setProject).catch(console.error);
   }, []);
@@ -53,9 +63,41 @@ export default function App() {
       geojsonRaw as GeoJSON.FeatureCollection<GeoJSON.Polygon>,
       project
     );
-    console.log(geojson);
     Forma.render.geojson.add({ geojson });
   }, [project]);
+
+  useEffect(() => {
+    if (!project) return;
+    if (data.length === 0) return;
+
+    const { zoneUsage, min, max } = parseZoneUsage(data);
+    const colorScaleStep = (max - min) / bluecolorScale10Item.length;
+    const colorMap = new Map<number, string>();
+    for (const [zoneId, count] of zoneUsage.entries()) {
+      const colorIndex = Math.floor(
+        Math.random() * bluecolorScale10Item.length
+      );
+      const color = bluecolorScale10Item[colorIndex];
+      colorMap.set(zoneId, color);
+    }
+    const newGeoJson = translateGeojsonPolygons(
+      zonesRaw as GeoJSON.FeatureCollection<GeoJSON.Polygon>,
+      project,
+      colorMap
+    );
+    if (!zone) {
+      Forma.render.geojson.add({ geojson: newGeoJson }).then((res) => {
+        setZone(res.id);
+        console.log("zones added");
+      });
+    } else {
+      console.log("zones updated");
+      Forma.render.geojson.update({
+        id: zone,
+        geojson: newGeoJson,
+      });
+    }
+  }, [data]);
 
   return (
     <div style={{ height: "100%" }}>
