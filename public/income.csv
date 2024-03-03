@@ -1,7 +1,7 @@
-år,Område,Delområde,Alder,Antal personer,Gnsnt_disponibel_indkomst_person
-2022,Ørestad,Ørestad City,15-24,1785,119911
-2022,Ørestad,Ørestad City,25-34,2730,234864
-2022,Ørestad,Ørestad City,35-44,1461,342502
-2022,Ørestad,Ørestad City,45-54,776,378700
-2022,Ørestad,Ørestad City,55-64,352,321797
-2022,Ørestad,Ørestad City,65+,301,240016
+år;Område;Delområde;Alder;Antal personer;Gnsnt_disponibel_indkomst_person
+2022;Ørestad;Ørestad City;15-24;1785;119911
+2022;Ørestad;Ørestad City;25-34;2730;234864
+2022;Ørestad;Ørestad City;35-44;1461;342502
+2022;Ørestad;Ørestad City;45-54;776;378700
+2022;Ørestad;Ørestad City;55-64;352;321797
+2022;Ørestad;Ørestad City;65+;301;240016

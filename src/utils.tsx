@@ -19,7 +19,7 @@ export type ITUData = {
     | "Resident"
     | "Short term visitor";
   visitorCount: number;
-  zoneId: number;
+  distribution?: { [zoneId: number]: number } | undefined;
 };
 
 export async function getCSV<T>(
@@ -33,7 +33,7 @@ export async function getCSV<T>(
   const delimiter = data.includes("\r\n") ? "\r\n" : "\n";
   const lines = data.split(delimiter);
   return lines.slice(1, lines.length - 1).map((line) => {
-    const splitLine = line.split(",");
+    const splitLine = line.split(";");
     return mapper(splitLine);
   });
 }
@@ -42,7 +42,8 @@ export function useData() {
   const [data, setData] = useState<ITUData[]>();
   useEffect(() => {
     const mapper = (splitLine: string[]): ITUData => {
-      return {
+      const peopleDistribution = splitLine.slice(11);
+      const obj: ITUData = {
         location: splitLine[0],
         date: new Date(
           `${splitLine[1]}-${splitLine[2]}-${splitLine[3]}T${splitLine[4]}:00:00`
@@ -53,10 +54,25 @@ export function useData() {
         visitorType: splitLine[8] as ITUData["visitorType"],
         gender: splitLine[9] as ITUData["gender"],
         visitorCount: parseInt(splitLine[10]),
-        zoneId: parseInt(splitLine[11]),
       };
+      if (peopleDistribution[0]) {
+        const distribution = splitLine.slice(11, 29).reduce((acc, curr, i) => {
+          const percentage =
+            parseFloat(curr.replace(",", ".").replace("\r", "")) / 100;
+
+          const numPeople = Math.floor(obj.visitorCount * percentage);
+          if (numPeople) {
+            acc[i] = numPeople;
+          }
+          return acc;
+        }, {} as { [zoneId: number]: number });
+        obj.distribution = distribution;
+      }
+      return obj;
     };
-    getCSV("/ITU_data.csv", mapper).then(setData).catch(console.error);
+    getCSV("/Residents_Areas_Friday10.csv", mapper)
+      .then(setData)
+      .catch(console.error);
   }, []);
   return data;
 }
@@ -116,13 +132,23 @@ export function useFilteredData(filter: Filter) {
   const educationData = useEducationData();
 
   const ITU_Data = useMemo(() => {
-    if (!data) return [];
+    if (!data || data?.length === 0) return [];
+    console.log("all data", data?.length);
     return data.filter((d: ITUData) => {
       const genderFilter = !filter.gender || filter.gender === d.gender;
       const visitorTypeFilter =
         !filter.visitorType || filter.visitorType === d.visitorType;
       const ageFilter = determineAge(d.ageRange, filter.ageFrom, filter.ageTo);
-      return genderFilter && visitorTypeFilter && ageFilter;
+      const date = new Date("2023-11-10");
+      const limitDate = new Date("2023-11-11");
+
+      return (
+        genderFilter &&
+        visitorTypeFilter &&
+        ageFilter &&
+        d.date.getTime() >= date.getTime() &&
+        d.date.getTime() <= limitDate.getTime()
+      );
     });
   }, [data, filter]);
 
@@ -174,7 +200,6 @@ export function translateGeojsonPolygons(
         feature.properties.stroke ??
         idToColor?.get(feature.id as number) ??
         "#000000";
-      console.log(color);
       return {
         ...feature,
         properties: {

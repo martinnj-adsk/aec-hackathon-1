@@ -22,22 +22,28 @@ const bluecolorScale10Item = [
 
 function parseZoneUsage(data: ITUData[]) {
   const zoneUsage = new Map<number, number>();
+  console.log(data?.length);
+  let distCount = 0;
   data.forEach((d) => {
-    const count = zoneUsage.get(d.zoneId) ?? 0;
-    zoneUsage.set(d.zoneId, count + d.visitorCount);
+    if (d.distribution) {
+      distCount += 1;
+      for (const [zoneId, count] of Object.entries(d.distribution)) {
+        const zoneIdNum = parseInt(zoneId);
+        const currentCount = zoneUsage.get(zoneIdNum) ?? 0;
+        zoneUsage.set(zoneIdNum, currentCount + count);
+      }
+    }
   });
 
+  console.log("total distribution count", distCount);
   const min = Math.min(...zoneUsage.values());
   console.log("min", min);
   const max = Math.max(...zoneUsage.values());
   console.log("max", max);
   console.log("zoneUsage", zoneUsage);
-  // const sum = Array.from(zoneUsage.values()).reduce((a, b) => a + b, 0);
-  // for (const [zoneId, count] of zoneUsage.entries()) {
-  //   zoneUsage.set(zoneId, Math.log(count));
-  // }
+  const sum = Array.from(zoneUsage.values()).reduce((a, b) => a + b, 0);
   console.log("zoneUsage", zoneUsage);
-  return { zoneUsage, min, max };
+  return { zoneUsage, min, max, sum };
 }
 
 const Table3Column = {
@@ -52,6 +58,11 @@ const Table2Column = {
   alignItems: "center",
   width: "100%",
 };
+
+function heatMapColorforValue(value: number) {
+  var h = (1.0 - value) * 240;
+  return "hsl(" + h + ", 100%, 50%)";
+}
 
 export default function App() {
   const [filter, setFilter] = useState<Filter>({
@@ -80,25 +91,12 @@ export default function App() {
 
   useEffect(() => {
     if (!project) return;
-    const geojson = translateGeojsonPolygons(
-      geojsonRaw as GeoJSON.FeatureCollection<GeoJSON.Polygon>,
-      project
-    );
-    Forma.render.geojson.add({ geojson });
-  }, [project]);
-
-  useEffect(() => {
-    if (!project) return;
     if (data.length === 0) return;
 
-    const { zoneUsage, min, max } = parseZoneUsage(data);
-    const colorScaleStep = (max - min) / bluecolorScale10Item.length;
+    const { zoneUsage, sum } = parseZoneUsage(data);
     const colorMap = new Map<number, string>();
     for (const [zoneId, count] of zoneUsage.entries()) {
-      const colorIndex = Math.floor(
-        Math.random() * bluecolorScale10Item.length
-      );
-      const color = bluecolorScale10Item[colorIndex];
+      const color = heatMapColorforValue(count / sum);
       colorMap.set(zoneId, color);
     }
     const newGeoJson = translateGeojsonPolygons(
